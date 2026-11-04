@@ -1,0 +1,10 @@
+unsloth
+trl
+transformers
+datasets
+accelerate
+peft
+bitsandbytes
+Pillow
+google-genai
+nltk
