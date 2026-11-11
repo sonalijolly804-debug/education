@@ -1,6 +1,17 @@
 # Aligning Lecture Generation with Pedagogical Structure
 
-Code and instructions for a curated dataset of 100 complete lectures for *Aligning Lecture Generation with Pedagogical Structure*.
+Code and a downloadable dataset of **100 complete lectures** for *Aligning Lecture Generation with Pedagogical Structure*.
+
+| Dataset | Contents |
+|---|---|
+| Lectures | 100 complete lectures from 79 courses |
+| Subject coverage | 13 categories |
+| Slides | 1,714 ordered PNG images with aligned narration |
+| Text | Plain and pedagogically annotated transcripts |
+| Download | [27 ZIP parts](data/), approximately 605 MB total |
+| Extracted size | Approximately 585 MiB |
+
+**Start here:** download all 27 parts, follow [the extraction instructions](#download-and-extract-the-dataset), then use `data/records/lectures_01.jsonl` with the scripts under `src/`.
 
 Pedagogy-aware fine-tuning (PAFT) learns pedagogical tags and slide-grounded narration jointly. The code supports PAFT, conventional SFT, guided and unguided zero-shot, few-shot, and chain-of-thought generation with Qwen3.5 vision-language models.
 
@@ -13,7 +24,7 @@ Pedagogy-aware fine-tuning (PAFT) learns pedagogical tags and slide-grounded nar
 - `src/prepare_data.py`: conversion from lecture CSV files to JSONL.
 - `src/scrape_nptel.py`: NPTEL transcript-link collection and optional PDF downloading.
 - `prompts/`: prompting-baseline and annotation instructions.
-- `data/`: destination for the numbered dataset ZIP uploads.
+- `data/`: 27 dataset ZIP parts, a file manifest, and SHA-256 checksums.
 
 Use the scripts under `src/` in the commands below. Copies of several scripts also exist at the repository root.
 
@@ -69,6 +80,24 @@ Extract every part into the **same repository root**, not into `data/`: archive 
 
 After extraction, expect `data/lectures.csv`, `data/selection.json`, `data/records/lectures_01.jsonl`, and 100 folders under `data/lectures/`. Together they contain **2,017 files**, including **1,714 PNG slides**, and occupy about **585 MiB** uncompressed. Original lecture IDs are retained and are not numbered consecutively from 1 to 100.
 
+### Verify downloaded archives
+
+The uploaded ZIP sizes and Git object hashes were checked against the local archives. You can verify your own downloads using `data/SHA256SUMS`.
+
+On Linux, run from the repository root:
+
+```bash
+(cd data && sha256sum -c SHA256SUMS)
+```
+
+On macOS:
+
+```bash
+(cd data && shasum -a 256 -c SHA256SUMS)
+```
+
+Every archive should report `OK`. If one fails, download that part again before extraction.
+
 ## Setup
 
 Use Python 3.10 or later and a CUDA environment supported by Unsloth. Install a current Unsloth/Transformers combination that supports Qwen3.5; GPU memory requirements depend on model size, image count, and sequence length.
@@ -91,13 +120,15 @@ python src/generate.py \
   --output outputs/generated.jsonl
 ```
 
+Create your own `data/demonstrations.jsonl` for few-shot experiments; it is not included in the ZIP parts.
+
 Use `--unguided` for plain narration, `--method cot` for chain-of-thought prompting, or `--method few_shot --examples data/demonstrations.jsonl` for two demonstrations from the same subject category. Demonstrations must come from lectures distinct from the generation inputs. To use a trained adapter, set `--model checkpoints/paft --method train`.
 
 ## Fine-tuning
 
 Fine-tuning uses only the ordered slide images as input. PAFT targets the annotated transcript; conventional SFT targets the plain transcript. Generation with `--method train` uses the same image-only input format.
 
-Supply your training data in the JSONL format below. The release has no predefined experimental partition. Create lecture-disjoint partitions for your experiment, keeping all slides of a lecture together.
+Supply your training data in the JSONL format below. The release has no predefined experimental partition. Create lecture-disjoint partitions for your experiment, keeping all slides of a lecture together. The `data/train.jsonl` used below is an example training split that you must create from the released JSONL records.
 
 ```bash
 python src/paft.py \
@@ -125,13 +156,15 @@ Omit `--download-dir` to collect links only. Repeat `--course-id` for multiple c
 
 The output CSV retains course and lecture identifiers, titles, language, source URLs, and downloaded file paths relative to `--download-dir`. Lecture numbers come from titles where available, otherwise from the displayed row order. Existing files are not overwritten. Collection stops on page or download failures; rows already written remain available in the output CSV. Source PDFs require slide extraction and transcript alignment before use with the training scripts.
 
-## Prepare and annotate data
+## Prepare and annotate new data
+
+The released dataset already includes JSONL records and annotations; skip conversion when using it. The example below is for your own source CSV. The released `data/lectures.csv` is an index and does not have the converter's required transcript and `slide_set` columns.
 
 ```bash
 python src/prepare_data.py \
-  --input data/lectures.csv \
-  --image-root data/slides \
-  --output data/lectures.jsonl
+  --input collected/aligned_lectures.csv \
+  --image-root . \
+  --output data/new_lectures.jsonl
 ```
 
 The converter accepts `course_id`, `lecture_number`, `category`, `slide_set`, `transcript_merged`, and optional `xml_train_annotated_transcript_clean` columns. `slide_set` is a serialized list. Use `--strip-prefix` to remove an existing image-root prefix, or the column options for different input schemas.
@@ -141,7 +174,7 @@ For new annotations, set `GEMINI_API_KEY` in your environment, install the sente
 ```bash
 python -m nltk.downloader punkt_tab
 python src/annotate.py \
-  --data data/lectures.jsonl \
+  --data data/new_lectures.jsonl \
   --model YOUR_GEMINI_MODEL_ID \
   --output data/annotated.jsonl
 ```
@@ -193,7 +226,7 @@ The training, generation, and annotation tools accept either a single JSONL file
 
 ## Dataset overview
 
-The release contains **100 complete lectures**, **1714 slide–transcript pairs**, and **79 courses**. Original lecture IDs are retained.
+The release contains **100 complete lectures**, **1,714 slide–transcript pairs**, and **79 courses**. Original lecture IDs are retained.
 
 | Subject | Lectures |
 |---|---:|
@@ -212,9 +245,9 @@ The release contains **100 complete lectures**, **1714 slide–transcript pairs*
 | Software Engineering | 7 |
 
 
-## Upload and download
+## Distribution and anonymous mirror
 
-Upload all 27 ZIP files to `data/` and commit the changes. Git LFS is not required for these archives. The uncompressed dataset is below 2 GiB, but the ZIPs are larger than the individual extracted files.
+All 27 ZIP files are committed in `data/` as ordinary Git files; Git LFS is not required. GitHub stores the archives without extracting them. Use the extraction steps above before running the code.
 
 The ZIP sizes are suitable for GitHub web uploads, but anonymous mirror downloads have not been verified. These parts exceed Anonymous GitHub's previously documented 8 MB per-file limit; do not assume that a successful GitHub upload makes them downloadable through the anonymous mirror.
 
