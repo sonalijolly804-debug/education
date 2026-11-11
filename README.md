@@ -1,6 +1,6 @@
 # Aligning Lecture Generation with Pedagogical Structure
 
-Code and a curated release of 100 complete lectures for *Aligning Lecture Generation with Pedagogical Structure*.
+Code and instructions for a curated dataset of 100 complete lectures for *Aligning Lecture Generation with Pedagogical Structure*.
 
 Pedagogy-aware fine-tuning (PAFT) learns pedagogical tags and slide-grounded narration jointly. The code supports PAFT, conventional SFT, guided and unguided zero-shot, few-shot, and chain-of-thought generation with Qwen3.5 vision-language models.
 
@@ -13,9 +13,61 @@ Pedagogy-aware fine-tuning (PAFT) learns pedagogical tags and slide-grounded nar
 - `src/prepare_data.py`: conversion from lecture CSV files to JSONL.
 - `src/scrape_nptel.py`: NPTEL transcript-link collection and optional PDF downloading.
 - `prompts/`: prompting-baseline and annotation instructions.
+- `data/`: destination for the numbered dataset ZIP uploads.
+
+Use the scripts under `src/` in the commands below. Copies of several scripts also exist at the repository root.
+
+The following dataset paths are created after extracting all ZIP parts:
+
 - `data/lectures/`: 100 lecture folders, each containing ordered slide images, plain narration, annotated narration, and metadata.
 - `data/records/`: one JSONL file containing 100 complete lecture records.
 - `data/lectures.csv`: lecture index with subject, slide count, word count, and transcript locations.
+
+## Download and extract the dataset
+
+The dataset is packaged as **27 independent ZIP archives**, named `data_part_01.zip` through `data_part_27.zip`. Each archive is below 25,000,000 bytes (approximately 17.9–22.9 MB), allowing upload through GitHub's web interface.
+
+**Availability:** at the latest repository check, `data/` contained only `.gitkeep`; the ZIP parts were not yet committed to `main`. The instructions below apply once all 27 parts appear in [the data folder](data/). A placeholder file does not contain the dataset.
+
+Download the repository using **Code → Download ZIP** and extract that outer ZIP, or clone it:
+
+```bash
+git clone https://github.com/sonalijolly804-debug/education.git
+cd education
+```
+
+Run extraction from the repository root (the folder containing `src/`, `prompts/`, and `README.md`). Keep the 27 dataset ZIPs inside `data/`. GitHub does not unpack uploaded archives automatically.
+
+**Linux/macOS (Bash):**
+
+```bash
+# Check that every expected part exists before extracting anything.
+(
+  for i in {1..27}; do
+    printf -v part 'data/data_part_%02d.zip' "$i"
+    [ -f "$part" ] || { echo "Missing: $part"; exit 1; }
+  done
+  for i in {1..27}; do
+    printf -v part 'data/data_part_%02d.zip' "$i"
+    unzip -o "$part" -d . || exit 1
+  done
+)
+```
+
+**Windows (PowerShell):**
+
+```powershell
+$parts = 1..27 | ForEach-Object { "data/data_part_{0:D2}.zip" -f $_ }
+$missing = @($parts | Where-Object { -not (Test-Path -LiteralPath $_) })
+if ($missing.Count -gt 0) { throw ("Missing ZIP parts: " + ($missing -join ", ")) }
+foreach ($part in $parts) {
+    Expand-Archive -LiteralPath $part -DestinationPath . -Force -ErrorAction Stop
+}
+```
+
+Extract every part into the **same repository root**, not into `data/`: archive entries already start with `data/`. These are standalone ZIPs; do not concatenate them. A lecture may span multiple parts, so all parts are required for the complete dataset.
+
+After extraction, expect `data/lectures.csv`, `data/selection.json`, `data/records/lectures_01.jsonl`, and 100 folders under `data/lectures/`. Together they contain **2,017 files**, including **1,714 PNG slides**, and occupy about **585 MiB** uncompressed. Original lecture IDs are retained and are not numbered consecutively from 1 to 100.
 
 ## Setup
 
@@ -29,7 +81,7 @@ pip install -r requirements.txt
 
 ## Generate narration
 
-Run commands from the repository root. Image paths in the released data are relative to this directory.
+Extract the dataset first, then run commands from the repository root. Image paths in the released data are relative to this directory.
 
 ```bash
 python src/generate.py \
@@ -112,8 +164,11 @@ Each JSONL record contains:
 
 Full lecture records use `[NEXT_SLIDE]` between consecutive slide narrations. The nth narration block corresponds to the nth image in `slide_set`. All slides of each selected lecture are retained in their original order.
 
+After extracting all 27 parts:
+
 ```text
 data/
+  selection.json
   lectures.csv
   records/
     lectures_01.jsonl
@@ -159,7 +214,9 @@ The release contains **100 complete lectures**, **1714 slide–transcript pairs*
 
 ## Upload and download
 
-Files are stored directly in Git, including PNG slide images; Git LFS is not required. The 100-lecture selection is below 2 GiB and each file is below 8 MB. Live anonymous mirror downloads still need verification after synchronization.
+Upload all 27 ZIP files to `data/` and commit the changes. Git LFS is not required for these archives. The uncompressed dataset is below 2 GiB, but the ZIPs are larger than the individual extracted files.
+
+The ZIP sizes are suitable for GitHub web uploads, but anonymous mirror downloads have not been verified. These parts exceed Anonymous GitHub's previously documented 8 MB per-file limit; do not assume that a successful GitHub upload makes them downloadable through the anonymous mirror.
 
 ## Acknowledgments
 
