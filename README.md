@@ -27,7 +27,7 @@ The following dataset paths are created after extracting all ZIP parts:
 
 The dataset is packaged as **27 independent ZIP archives**, named `data_part_01.zip` through `data_part_27.zip`. Each archive is below 25,000,000 bytes (approximately 17.9–22.9 MB), allowing upload through GitHub's web interface.
 
-**Availability:** at the latest repository check, `data/` contained only `.gitkeep`; the ZIP parts were not yet committed to `main`. The instructions below apply once all 27 parts appear in [the data folder](data/). A placeholder file does not contain the dataset.
+**Availability:** all 27 ZIP parts are available in [the data folder](data/). Download every part before extracting. File sizes and counts are listed in [the manifest](data/parts-manifest.tsv); [SHA-256 checksums](data/SHA256SUMS) are provided to verify downloads.
 
 Download the repository using **Code → Download ZIP** and extract that outer ZIP, or clone it:
 
